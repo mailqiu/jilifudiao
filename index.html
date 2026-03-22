@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图层浮雕/凸起定制服务</title>
+    <style>
+        :root { --primary: #2c3e50; --accent: #3498db; --danger: #e74c3c; }
+        body { font-family: "Microsoft YaHei", sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
+        
+        .section { margin-bottom: 20px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
+        input[type="text"], input[type="email"], textarea { 
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px;
+        }
+        .hint { font-size: 12px; color: #666; margin-top: 4px; }
+
+        /* 提示框 */
+        .alert { background: #fff9db; border-left: 4px solid #fcc419; padding: 12px; font-size: 13px; margin-bottom: 20px; }
+        
+        /* 价格展示 */
+        .price-box { background: #e8f4fd; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; }
+        .price-box span { color: var(--danger); font-size: 24px; font-weight: bold; }
+
+        /* 支付区域 */
+        #paymentArea { display: none; text-align: center; border: 2px dashed #3498db; padding: 20px; border-radius: 10px; margin-top: 20px; }
+        .qr-img { width: 180px; height: 180px; background: #eee; margin: 10px auto; border: 1px solid #ddd; }
+        
+        /* 按钮 */
+        .btn { 
+            width: 100%; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; 
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-success { background: #27ae60; color: white; margin-top: 10px; }
+
+        .footer-info { font-size: 13px; color: #7f8c8d; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .urgent { color: var(--danger); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>图层定制处理</h2>
+
+    <div class="alert">
+        💡 <b>备注：</b>单一图层文件默认执行“勾边浮雕”。<br>
+        ⏱️ 24小时内回复邮件。
+    </div>
+
+    <form id="orderForm">
+        <div class="section">
+            <label>上传图片文件 (5元/张)</label>
+            <input type="file" id="fileInput" multiple required onchange="updateTotal()">
+            <div class="hint">支持多选文件批量上传</div>
+        </div>
+
+        <div class="section">
+            <label>哪些图层需要【整体凸起】？</label>
+            <input type="text" id="raiseLayer" placeholder="描述图层名称或位置" required>
+        </div>
+
+        <div class="section">
+            <label>哪些图层需要【勾边浮雕】？</label>
+            <input type="text" id="strokeLayer" placeholder="描述图层名称或位置" required>
+        </div>
+
+        <div class="section">
+            <label>您的接收邮箱</label>
+            <input type="email" id="userEmail" placeholder="用于接收成品文件" required>
+        </div>
+
+        <div class="price-box">
+            需处理 <b id="fileCount">0</b> 张，总计：<br>
+            <span>¥ <span id="totalPrice">0</span></span>
+        </div>
+
+        <button type="button" id="submitStep1" class="btn btn-primary" onclick="showPayment()">核对信息并去支付</button>
+
+        <div id="paymentArea">
+            <p style="margin-top:0;"><b>请扫码支付 <span id="payAmount">0</span> 元</b></p>
+            <img src="qr.jpg" class="qr-img" alt="请放置收款码 qr.jpg">
+            
+            <div style="margin-top:15px;">
+                <label>输入支付订单号【后4位】</label>
+                <input type="text" id="tradeNo" placeholder="用于核对款项" maxlength="4">
+            </div>
+            <button type="button" class="btn btn-success" onclick="finalSubmit()">我已支付，提交订单</button>
+        </div>
+    </form>
+
+    <div class="footer-info">
+        接收邮箱：52395719@qq.com <br>
+        <span class="urgent">加急电话：13391518578</span>
+    </div>
+</div>
+
+<script>
+    // 更新价格逻辑
+    function updateTotal() {
+        const files = document.getElementById('fileInput').files;
+        const count = files.length;
+        const total = count * 5;
+        document.getElementById('fileCount').innerText = count;
+        document.getElementById('totalPrice').innerText = total;
+        document.getElementById('payAmount').innerText = total;
+    }
+
+    // 显示支付界面
+    function showPayment() {
+        const fileInput = document.getElementById('fileInput').files;
+        if (fileInput.length === 0) return alert("请先上传文件");
+        if (!document.getElementById('userEmail').value) return alert("请填写您的邮箱");
+
+        document.getElementById('submitStep1').style.display = 'none';
+        document.getElementById('paymentArea').style.display = 'block';
+    }
+
+    // 最终提交逻辑
+    async function finalSubmit() {
+        const tradeNo = document.getElementById('tradeNo').value;
+        if (tradeNo.length < 4) return alert("请填写支付单号后4位以供对账");
+
+        // 构造数据
+        const formData = new FormData();
+        const files = document.getElementById('fileInput').files;
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+        }
+        formData.append('raiseLayer', document.getElementById('raiseLayer').value);
+        formData.append('strokeLayer', document.getElementById('strokeLayer').value);
+        formData.append('userEmail', document.getElementById('userEmail').value);
+        formData.append('tradeNo', tradeNo);
+        formData.append('totalPrice', document.getElementById('totalPrice').innerText);
+
+        // 提示发送中
+        alert("正在上传并发送需求，请稍候...");
+
+        try {
+            // 这里替换成你真实的后端接口地址，例如 http://你的服务器IP:3000/api/submit-order
+            const response = await fetch('http://localhost:3000/api/submit-order', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert("订单提交成功！请注意查收邮件。");
+                location.reload(); // 重置页面
+            } else {
+                alert("发送失败，请检查后端服务是否开启。");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("无法连接到服务器。提示：这只是前端页面，你需要运行上一步给你的 Node.js 后端程序才能真正发送邮件。");
+        }
+    }
+</script>
+
+</body>
+</html>
