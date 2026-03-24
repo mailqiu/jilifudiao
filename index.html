@@ -87,7 +87,7 @@
                 <label>输入支付订单号【后4位】</label>
                 <input type="text" id="tradeNo" placeholder="用于核对款项" maxlength="4">
             </div>
-            <button type="button" class="btn btn-success" onclick="finalSubmit()">我已支付，提交订单</button>
+            <button type="button" id="finalBtn" class="btn btn-success" onclick="finalSubmit()">我已支付，提交订单</button>
         </div>
     </form>
 
@@ -98,7 +98,6 @@
 </div>
 
 <script>
-    // 更新价格逻辑
     function updateTotal() {
         const files = document.getElementById('fileInput').files;
         const count = files.length;
@@ -108,22 +107,29 @@
         document.getElementById('payAmount').innerText = total;
     }
 
-    // 显示支付界面
     function showPayment() {
         const fileInput = document.getElementById('fileInput').files;
+        const raise = document.getElementById('raiseLayer').value;
+        const stroke = document.getElementById('strokeLayer').value;
+        const email = document.getElementById('userEmail').value;
+
         if (fileInput.length === 0) return alert("请先上传文件");
-        if (!document.getElementById('userEmail').value) return alert("请填写您的邮箱");
+        if (!raise || !stroke || !email) return alert("请完整填写需求信息和邮箱");
 
         document.getElementById('submitStep1').style.display = 'none';
         document.getElementById('paymentArea').style.display = 'block';
     }
 
-    // 最终提交逻辑
     async function finalSubmit() {
         const tradeNo = document.getElementById('tradeNo').value;
+        const btn = document.getElementById('finalBtn');
+
         if (tradeNo.length < 4) return alert("请填写支付单号后4位以供对账");
 
-        // 构造数据
+        // 防止重复点击
+        btn.disabled = true;
+        btn.innerText = "上传中，请勿关闭页面...";
+
         const formData = new FormData();
         const files = document.getElementById('fileInput').files;
         for (let i = 0; i < files.length; i++) {
@@ -135,12 +141,9 @@
         formData.append('tradeNo', tradeNo);
         formData.append('totalPrice', document.getElementById('totalPrice').innerText);
 
-        // 提示发送中
-        alert("正在上传并发送需求，请稍候...");
-
         try {
-            // 这里替换成你真实的后端接口地址，例如 http://你的服务器IP:3000/api/submit-order
-            const response = await fetch('http://localhost:3000/api/submit-order', {
+            // 【关键修改】：使用相对路径，自动适配 Render 域名
+            const response = await fetch('/api/submit-order', {
                 method: 'POST',
                 body: formData
             });
@@ -148,13 +151,17 @@
             const result = await response.json();
             if (result.success) {
                 alert("订单提交成功！请注意查收邮件。");
-                location.reload(); // 重置页面
+                location.reload();
             } else {
-                alert("发送失败，请检查后端服务是否开启。");
+                alert("提交失败：" + (result.message || "未知错误"));
+                btn.disabled = false;
+                btn.innerText = "我已支付，提交订单";
             }
         } catch (error) {
             console.error(error);
-            alert("无法连接到服务器。提示：这只是前端页面，你需要运行上一步给你的 Node.js 后端程序才能真正发送邮件。");
+            alert("无法连接服务器。请确保后端程序已启动且网络通畅。");
+            btn.disabled = false;
+            btn.innerText = "我已支付，提交订单";
         }
     }
 </script>
