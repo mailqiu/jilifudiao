@@ -2,11 +2,16 @@ const express = require('express');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
+const path = require('path'); // 新增：处理路径
 
 const app = express();
 app.use(cors()); 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 【关键修改 1】：开启静态文件访问
+// 这样你访问域名时，Render 才知道去显示 index.html 和 qr.jpg
+app.use(express.static('.')); 
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -24,6 +29,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// 路由保持不变
 app.post('/api/submit-order', upload.array('files', 10), async (req, res) => {
     try {
         const { raiseLayer, strokeLayer, userEmail, tradeNo, totalPrice } = req.body;
@@ -55,4 +61,14 @@ app.post('/api/submit-order', upload.array('files', 10), async (req, res) => {
     }
 });
 
-app.listen(3000, () => console.log('Server running on 3000'));
+// 【关键修改 2】：根路由指向 index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// 【关键修改 3】：兼容 Render 的动态端口
+// Render 会通过环境变量 PORT 分配端口，必须监听 0.0.0.0
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server is running on port ${PORT}`);
+});
