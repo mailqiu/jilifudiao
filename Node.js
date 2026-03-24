@@ -2,45 +2,48 @@ const express = require('express');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
-const path = require('path'); // 用于处理文件路径
+const path = require('path');
 
 const app = express();
 
-// 1. 基础配置
+// 1. 基础中间件配置
 app.use(cors()); 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// 2. 【关键】开启静态文件托管
-// 这行代码让浏览器能够访问你文件夹里的 qr.jpg、style.css 等文件
+// 2. 开启静态文件托管（确保能访问 index.html 和 qr.jpg）
 app.use(express.static('.')); 
 
 // 3. 文件上传配置 (内存存储)
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// 4. 邮件发送配置
+// 4. 邮件发送配置 (针对海外云服务器优化)
 const MY_QQ_EMAIL = '52395719@qq.com'; 
-const MY_AUTH_CODE = 'nnetjjaplicibifd'; // 确保这是你最新的16位授权码
+const MY_AUTH_CODE = 'nnetjjaplicibifd'; // 确保这是最新的16位授权码
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.qq.com',
-    port: 465,
-    secure: true, 
+    port: 587,              // ✅ 切换到 587 端口以避免海外连接 465 端口超时
+    secure: false,          // ✅ 587 端口需设置为 false
     auth: {
         user: MY_QQ_EMAIL,
         pass: MY_AUTH_CODE
+    },
+    // ✅ 增加 TLS 配置，提高跨国网络连接成功率
+    tls: {
+        rejectUnauthorized: false 
     }
 });
 
-// 5. 【关键】根路由配置
-// 当有人访问 https://royal-0hsp.onrender.com/ 时，给他们展示 index.html
+// 5. 根路由：返回前端页面
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // 6. 订单提交接口
 app.post('/api/submit-order', upload.array('files', 10), async (req, res) => {
+    console.log('收到新请求，正在处理...');
     try {
         const { raiseLayer, strokeLayer, userEmail, tradeNo, totalPrice } = req.body;
         const files = req.files;
@@ -66,17 +69,24 @@ app.post('/api/submit-order', upload.array('files', 10), async (req, res) => {
             attachments: attachments
         };
 
+        // 发送邮件
         await transporter.sendMail(mailOptions);
+        console.log('邮件发送成功！');
         res.status(200).json({ success: true, message: '订单已发送至邮箱' });
+
     } catch (error) {
-        console.error('发送邮件失败:', error);
-        res.status(500).json({ success: false, message: '服务器内部错误' });
+        // ✅ 这里的错误会被打印到 Render 的 Logs 里
+        console.error('发送邮件失败详情:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: '服务器发信失败，请检查授权码或稍后重试',
+            error: error.message 
+        });
     }
 });
 
-// 7. 【关键】监听端口配置
-// Render 会自动分配 PORT 环境变量，必须优先使用它
+// 7. 端口配置 (Render 动态分配)
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`服务已启动，正在监听端口: ${PORT}`);
+    console.log(`服务已在端口 ${PORT} 启动`);
 });
