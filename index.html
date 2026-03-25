@@ -9,50 +9,66 @@
         body { font-family: "Microsoft YaHei", sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
+        
         .section { margin-bottom: 20px; }
         label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
         input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         
-        /* 支付区域优化 */
+        /* 恢复注意事项样式 */
+        .alert { background: #fff9db; border-left: 4px solid #fcc419; padding: 12px; font-size: 13px; margin-bottom: 20px; line-height: 1.6; }
+        
+        /* 支付区域 */
         #paymentArea { display: none; text-align: center; border: 2px dashed #3498db; padding: 20px; border-radius: 10px; margin-top: 20px; background: #fafafa; }
-        
-        /* 二维码容器：增加点击提示动画 */
-        .qr-link { text-decoration: none; display: inline-block; transition: transform 0.2s; }
-        .qr-link:active { transform: scale(0.95); }
-        
+        .qr-link { text-decoration: none; display: inline-block; }
         .qr-img { 
-            max-width: 200px; 
-            width: 100%; 
-            height: auto; /* 自动高度，严禁变形 */
-            display: block; 
-            margin: 10px auto; 
-            border: 5px solid #fff;
+            max-width: 200px; width: 100%; height: auto; 
+            display: block; margin: 10px auto; border: 5px solid #fff;
             box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
-        .qr-tip { font-size: 13px; color: #3498db; font-weight: bold; margin-bottom: 5px; animation: blink 2s infinite; }
-        @keyframes blink { 0% {opacity: 1;} 50% {opacity: 0.5;} 100% {opacity: 1;} }
+        .qr-tip { font-size: 13px; color: #3498db; font-weight: bold; margin-bottom: 5px; }
 
         .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-success { background: #27ae60; color: white; }
         .price-box { background: #e8f4fd; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; font-weight: bold; }
+        
+        .footer-info { font-size: 13px; color: #7f8c8d; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .urgent { color: var(--danger); font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>图层定制处理</h2>
+
+    <div class="alert">
+        💡 <b>备注：</b>单一图层文件默认执行“勾边浮雕”。<br>
+        ⏱️ 24小时内回复邮件。
+    </div>
+
     <form id="orderForm">
-        <div class="section"><label>1. 上传图片 (5元/张)</label><input type="file" id="fileInput" multiple required onchange="updateTotal()"></div>
-        <div class="section"><label>2. 哪些图层需要【整体凸起】？</label><input type="text" id="raiseLayer" placeholder="如图：背景、人物" required></div>
-        <div class="section"><label>3. 哪些图层需要【勾边浮雕】？</label><input type="text" id="strokeLayer" placeholder="如图：文字、边框" required></div>
-        <div class="section"><label>4. 您的接收邮箱</label><input type="email" id="userEmail" placeholder="用于发送成品" required></div>
+        <div class="section">
+            <label>1. 上传图片文件 (5元/张)</label>
+            <input type="file" id="fileInput" multiple onchange="updateTotal()">
+        </div>
+        <div class="section">
+            <label>2. 哪些图层需要【整体凸起】？</label>
+            <input type="text" id="raiseLayer" placeholder="描述图层名称或位置 (选填)">
+        </div>
+        <div class="section">
+            <label>3. 哪些图层需要【勾边浮雕】？</label>
+            <input type="text" id="strokeLayer" placeholder="描述图层名称或位置 (选填)">
+        </div>
+        <div class="section">
+            <label>4. 您的接收邮箱</label>
+            <input type="email" id="userEmail" placeholder="用于接收成品 (建议填写)">
+        </div>
 
         <div class="price-box">应付总计：<span style="color:var(--danger); font-size:24px;">¥ <span id="totalPrice">0</span></span></div>
         <button type="button" id="submitStep1" class="btn btn-primary" onclick="showPayment()">核对信息并去支付</button>
 
         <div id="paymentArea">
-            <p class="qr-tip">👇 点击下方图片放大，长按识别支付</p>
+            <p class="qr-tip">👇 点击图片可放大预览，长按识别支付</p>
             <a href="qr.jpg" target="_blank" class="qr-link">
                 <img src="qr.jpg" class="qr-img" alt="点击放大支付二维码">
             </a>
@@ -64,6 +80,11 @@
             <button type="button" id="finalBtn" class="btn btn-success" onclick="finalSubmit()">我已支付，提交订单</button>
         </div>
     </form>
+
+    <div class="footer-info">
+        接收邮箱：52395719@qq.com <br>
+        <span class="urgent">加急电话：13391518578</span>
+    </div>
 </div>
 
 <script>
@@ -73,8 +94,8 @@
     }
 
     function showPayment() {
+        // 仅保留上传文件的判断，其他信息不再强制
         if (document.getElementById('fileInput').files.length === 0) return alert("请先上传文件");
-        if (!document.getElementById('userEmail').value) return alert("请填写接收邮箱");
         document.getElementById('submitStep1').style.display = 'none';
         document.getElementById('paymentArea').style.display = 'block';
     }
@@ -82,6 +103,8 @@
     async function finalSubmit() {
         const btn = document.getElementById('finalBtn');
         const tradeNo = document.getElementById('tradeNo').value;
+        
+        // 支付单号还是建议保留，否则你爸对不上账
         if (tradeNo.length < 4) return alert("请填写支付单号后4位");
 
         btn.disabled = true;
@@ -90,9 +113,11 @@
         const formData = new FormData();
         const files = document.getElementById('fileInput').files;
         for (let i = 0; i < files.length; i++) { formData.append('files', files[i]); }
-        formData.append('raiseLayer', document.getElementById('raiseLayer').value);
-        formData.append('strokeLayer', document.getElementById('strokeLayer').value);
-        formData.append('userEmail', document.getElementById('userEmail').value);
+        
+        // 获取值，如果没有填则传空字符串
+        formData.append('raiseLayer', document.getElementById('raiseLayer').value || "未填写");
+        formData.append('strokeLayer', document.getElementById('strokeLayer').value || "未填写");
+        formData.append('userEmail', document.getElementById('userEmail').value || "未填写");
         formData.append('tradeNo', tradeNo);
         formData.append('totalPrice', document.getElementById('totalPrice').innerText);
 
@@ -108,7 +133,7 @@
                 btn.innerText = "我已支付，提交订单";
             }
         } catch (error) {
-            alert("提交超时，但后端可能已在处理，请检查邮箱");
+            alert("提交超时，但后端可能已在处理，请检查邮箱确认");
             btn.disabled = false;
             btn.innerText = "我已支付，提交订单";
         }
