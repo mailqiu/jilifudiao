@@ -8,18 +8,26 @@
         :root { --primary: #2c3e50; --accent: #3498db; --danger: #e74c3c; }
         body { font-family: "Microsoft YaHei", sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: var(--primary); margin-bottom: 25px; }
+        h2 { text-align: center; color: var(--primary); margin-bottom: 10px; }
         
-        .section { margin-bottom: 20px; }
+        /* 注意事项样式 - 确保显示 */
+        .alert-box { 
+            background: #fff9db; 
+            border-left: 5px solid #fcc419; 
+            padding: 15px; 
+            font-size: 14px; 
+            margin-bottom: 25px; 
+            line-height: 1.7;
+            border-radius: 4px;
+        }
+
+        .section { margin-bottom: 18px; }
         label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
-        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        
-        /* 恢复注意事项样式 */
-        .alert { background: #fff9db; border-left: 4px solid #fcc419; padding: 12px; font-size: 13px; margin-bottom: 20px; line-height: 1.6; }
+        input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
         
         /* 支付区域 */
         #paymentArea { display: none; text-align: center; border: 2px dashed #3498db; padding: 20px; border-radius: 10px; margin-top: 20px; background: #fafafa; }
-        .qr-link { text-decoration: none; display: inline-block; }
+        .qr-link { text-decoration: none; display: inline-block; -webkit-tap-highlight-color: transparent; }
         .qr-img { 
             max-width: 200px; width: 100%; height: auto; 
             display: block; margin: 10px auto; border: 5px solid #fff;
@@ -27,12 +35,12 @@
         }
         .qr-tip { font-size: 13px; color: #3498db; font-weight: bold; margin-bottom: 5px; }
 
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-success { background: #27ae60; color: white; }
         .price-box { background: #e8f4fd; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; font-weight: bold; }
         
-        .footer-info { font-size: 13px; color: #7f8c8d; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        .footer-info { font-size: 13px; color: #7f8c8d; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; line-height: 1.8; }
         .urgent { color: var(--danger); font-weight: bold; }
     </style>
 </head>
@@ -41,9 +49,10 @@
 <div class="container">
     <h2>图层定制处理</h2>
 
-    <div class="alert">
-        💡 <b>备注：</b>单一图层文件默认执行“勾边浮雕”。<br>
-        ⏱️ 24小时内回复邮件。
+    <div class="alert-box">
+        💡 <b>重要备注：</b><br>
+        1. 单一图层文件默认执行<b>“勾边浮雕”</b>处理。<br>
+        2. 提交后请耐心等待，我们将于 <b>24小时内</b> 回复邮件。
     </div>
 
     <form id="orderForm">
@@ -51,38 +60,42 @@
             <label>1. 上传图片文件 (5元/张)</label>
             <input type="file" id="fileInput" multiple onchange="updateTotal()">
         </div>
+        
         <div class="section">
             <label>2. 哪些图层需要【整体凸起】？</label>
-            <input type="text" id="raiseLayer" placeholder="描述图层名称或位置 (选填)">
+            <input type="text" id="raiseLayer" placeholder="描述名称或位置 (选填)">
         </div>
+
         <div class="section">
             <label>3. 哪些图层需要【勾边浮雕】？</label>
-            <input type="text" id="strokeLayer" placeholder="描述图层名称或位置 (选填)">
+            <input type="text" id="strokeLayer" placeholder="描述名称或位置 (选填)">
         </div>
+
         <div class="section">
             <label>4. 您的接收邮箱</label>
-            <input type="email" id="userEmail" placeholder="用于接收成品 (建议填写)">
+            <input type="email" id="userEmail" placeholder="建议填写，方便接收成品">
         </div>
 
         <div class="price-box">应付总计：<span style="color:var(--danger); font-size:24px;">¥ <span id="totalPrice">0</span></span></div>
+        
         <button type="button" id="submitStep1" class="btn btn-primary" onclick="showPayment()">核对信息并去支付</button>
 
         <div id="paymentArea">
-            <p class="qr-tip">👇 点击图片可放大预览，长按识别支付</p>
+            <p class="qr-tip">👇 点击下方图片放大后，长按识别支付</p>
             <a href="qr.jpg" target="_blank" class="qr-link">
                 <img src="qr.jpg" class="qr-img" alt="点击放大支付二维码">
             </a>
             
             <div style="margin-top:20px;">
                 <label>支付完成后，输入订单号【后4位】</label>
-                <input type="text" id="tradeNo" placeholder="核对款项用" maxlength="4">
+                <input type="text" id="tradeNo" placeholder="必填，用于核对款项" maxlength="4">
             </div>
             <button type="button" id="finalBtn" class="btn btn-success" onclick="finalSubmit()">我已支付，提交订单</button>
         </div>
     </form>
 
     <div class="footer-info">
-        接收邮箱：52395719@qq.com <br>
+        客服邮箱：52395719@qq.com <br>
         <span class="urgent">加急电话：13391518578</span>
     </div>
 </div>
@@ -94,8 +107,10 @@
     }
 
     function showPayment() {
-        // 仅保留上传文件的判断，其他信息不再强制
-        if (document.getElementById('fileInput').files.length === 0) return alert("请先上传文件");
+        // 只检查有没有选文件
+        if (document.getElementById('fileInput').files.length === 0) {
+            return alert("请先上传文件后再点击支付");
+        }
         document.getElementById('submitStep1').style.display = 'none';
         document.getElementById('paymentArea').style.display = 'block';
     }
@@ -104,17 +119,17 @@
         const btn = document.getElementById('finalBtn');
         const tradeNo = document.getElementById('tradeNo').value;
         
-        // 支付单号还是建议保留，否则你爸对不上账
+        // 支付单号保留，方便你爸对账
         if (tradeNo.length < 4) return alert("请填写支付单号后4位");
 
         btn.disabled = true;
-        btn.innerText = "发送中，请稍候...";
+        btn.innerText = "正在发送，请勿关闭页面...";
 
         const formData = new FormData();
         const files = document.getElementById('fileInput').files;
         for (let i = 0; i < files.length; i++) { formData.append('files', files[i]); }
         
-        // 获取值，如果没有填则传空字符串
+        // 如果用户没填，后端收到的就是“未填写”
         formData.append('raiseLayer', document.getElementById('raiseLayer').value || "未填写");
         formData.append('strokeLayer', document.getElementById('strokeLayer').value || "未填写");
         formData.append('userEmail', document.getElementById('userEmail').value || "未填写");
@@ -125,15 +140,15 @@
             const response = await fetch('/api/submit-order', { method: 'POST', body: formData });
             const result = await response.json();
             if (result.success) {
-                alert("订单提交成功！请注意查收邮件。");
+                alert("订单提交成功！请等待 24 小时内查收邮件。");
                 location.reload();
             } else {
-                alert("失败：" + (result.error || "接口异常"));
+                alert("发送失败：" + (result.error || "接口异常"));
                 btn.disabled = false;
                 btn.innerText = "我已支付，提交订单";
             }
         } catch (error) {
-            alert("提交超时，但后端可能已在处理，请检查邮箱确认");
+            alert("提交超时，但后端可能已在处理，请检查邮箱确认。");
             btn.disabled = false;
             btn.innerText = "我已支付，提交订单";
         }
