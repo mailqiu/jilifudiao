@@ -13,26 +13,32 @@
         label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
         input[type="text"], input[type="email"] { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         
-        /* 价格展示 */
-        .price-box { background: #e8f4fd; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; }
-        .price-box span { color: var(--danger); font-size: 24px; font-weight: bold; }
-
-        /* 支付区域：修正二维码变形 */
+        /* 支付区域：修正变形 + 点击提示 */
         #paymentArea { display: none; text-align: center; border: 2px dashed #3498db; padding: 20px; border-radius: 10px; margin-top: 20px; background: #fafafa; }
+        .qr-container { position: relative; cursor: pointer; display: inline-block; }
         .qr-img { 
-            max-width: 220px; 
+            max-width: 200px; 
             width: 100%; 
-            height: auto; /* 关键：自动高度防止变形 */
+            height: auto; 
             display: block; 
-            margin: 15px auto; 
+            margin: 10px auto; 
             border: 4px solid #fff;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        
+        .qr-tip { font-size: 12px; color: #3498db; margin-bottom: 10px; }
+
+        /* 全屏预览遮罩层 */
+        #previewOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 999; justify-content: center; align-items: center;
+        }
+        #previewOverlay img { max-width: 90%; max-height: 80%; border: 5px solid white; }
+
         .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-success { background: #27ae60; color: white; margin-top: 10px; }
-        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .price-box { background: #e8f4fd; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; }
+        .price-box span { color: var(--danger); font-size: 24px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -40,32 +46,19 @@
 <div class="container">
     <h2>图层定制处理</h2>
     <form id="orderForm">
-        <div class="section">
-            <label>1. 上传图片文件 (5元/张)</label>
-            <input type="file" id="fileInput" multiple required onchange="updateTotal()">
-        </div>
-        <div class="section">
-            <label>2. 哪些图层需要【整体凸起】？</label>
-            <input type="text" id="raiseLayer" placeholder="描述图层名称" required>
-        </div>
-        <div class="section">
-            <label>3. 哪些图层需要【勾边浮雕】？</label>
-            <input type="text" id="strokeLayer" placeholder="描述图层名称" required>
-        </div>
-        <div class="section">
-            <label>4. 您的接收邮箱</label>
-            <input type="email" id="userEmail" placeholder="用于接收成品" required>
-        </div>
+        <div class="section"><label>1. 上传图片 (5元/张)</label><input type="file" id="fileInput" multiple required onchange="updateTotal()"></div>
+        <div class="section"><label>2. 哪些图层需要【整体凸起】？</label><input type="text" id="raiseLayer" required></div>
+        <div class="section"><label>3. 哪些图层需要【勾边浮雕】？</label><input type="text" id="strokeLayer" required></div>
+        <div class="section"><label>4. 您的接收邮箱</label><input type="email" id="userEmail" required></div>
 
-        <div class="price-box">
-            总计：<span>¥ <span id="totalPrice">0</span></span>
-        </div>
-
+        <div class="price-box">总计：<span>¥ <span id="totalPrice">0</span></span></div>
         <button type="button" id="submitStep1" class="btn btn-primary" onclick="showPayment()">核对信息并去支付</button>
 
         <div id="paymentArea">
-            <p><b>请长按或扫码支付 <span id="payAmount">0</span> 元</b></p>
-            <img src="qr.jpg" class="qr-img" alt="支付二维码">
+            <p class="qr-tip">温馨提示：点击图片放大后，长按识别支付</p>
+            <div class="qr-container" onclick="openPreview()">
+                <img src="qr.jpg" class="qr-img" alt="支付二维码">
+            </div>
             
             <div style="margin-top:15px;">
                 <label>输入支付订单号【后4位】</label>
@@ -76,12 +69,16 @@
     </form>
 </div>
 
+<div id="previewOverlay" onclick="closePreview()">
+    <img src="qr.jpg" alt="预览">
+    <p style="color:white; position:absolute; bottom:20px;">点击空白处返回</p>
+</div>
+
 <script>
     function updateTotal() {
         const count = document.getElementById('fileInput').files.length;
-        const total = count * 5;
-        document.getElementById('totalPrice').innerText = total;
-        document.getElementById('payAmount').innerText = total;
+        document.getElementById('totalPrice').innerText = count * 5;
+        document.getElementById('payAmount').innerText = count * 5;
     }
 
     function showPayment() {
@@ -90,13 +87,17 @@
         document.getElementById('paymentArea').style.display = 'block';
     }
 
+    // 预览逻辑
+    function openPreview() { document.getElementById('previewOverlay').style.display = 'flex'; }
+    function closePreview() { document.getElementById('previewOverlay').style.display = 'none'; }
+
     async function finalSubmit() {
         const btn = document.getElementById('finalBtn');
         const tradeNo = document.getElementById('tradeNo').value;
         if (tradeNo.length < 4) return alert("请填写支付单号后4位");
 
         btn.disabled = true;
-        btn.innerText = "正在上传并发送邮件，请稍候...";
+        btn.innerText = "正在发送邮件，请稍候...";
 
         const formData = new FormData();
         const files = document.getElementById('fileInput').files;
@@ -114,12 +115,12 @@
                 alert("订单提交成功！请注意查收邮件。");
                 location.reload();
             } else {
-                alert("提交失败：" + (result.error || "未知错误"));
+                alert("发信失败：" + (result.error || "网络波动"));
                 btn.disabled = false;
                 btn.innerText = "我已支付，提交订单";
             }
         } catch (error) {
-            alert("连接服务器超时，但后端可能仍在处理，请检查邮箱或稍后再试。");
+            alert("提交超时，请检查邮箱是否收到确认信");
             btn.disabled = false;
         }
     }
