@@ -10,7 +10,7 @@
         .container { max-width: 500px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: var(--primary); margin-bottom: 10px; }
         
-        /* 注意事项样式 - 确保显示 */
+        /* 注意事项区域 */
         .alert-box { 
             background: #fff9db; 
             border-left: 5px solid #fcc419; 
@@ -25,9 +25,12 @@
         label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
         input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
         
+        /* 价格盒 */
+        .price-box { background: #e8f4fd; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; font-weight: bold; }
+        
         /* 支付区域 */
         #paymentArea { display: none; text-align: center; border: 2px dashed #3498db; padding: 20px; border-radius: 10px; margin-top: 20px; background: #fafafa; }
-        .qr-link { text-decoration: none; display: inline-block; -webkit-tap-highlight-color: transparent; }
+        .qr-link { text-decoration: none; display: inline-block; }
         .qr-img { 
             max-width: 200px; width: 100%; height: auto; 
             display: block; margin: 10px auto; border: 5px solid #fff;
@@ -35,10 +38,9 @@
         }
         .qr-tip { font-size: 13px; color: #3498db; font-weight: bold; margin-bottom: 5px; }
 
-        .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-primary { background: var(--accent); color: white; }
         .btn-success { background: #27ae60; color: white; }
-        .price-box { background: #e8f4fd; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; font-weight: bold; }
         
         .footer-info { font-size: 13px; color: #7f8c8d; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; line-height: 1.8; }
         .urgent { color: var(--danger); font-weight: bold; }
@@ -62,17 +64,17 @@
         </div>
         
         <div class="section">
-            <label>2. 哪些图层需要【整体凸起】？</label>
-            <input type="text" id="raiseLayer" placeholder="描述名称或位置 (选填)">
+            <label>2. 哪些图层需要【整体凸起】？ (选填)</label>
+            <input type="text" id="raiseLayer" placeholder="描述名称或位置">
         </div>
 
         <div class="section">
-            <label>3. 哪些图层需要【勾边浮雕】？</label>
-            <input type="text" id="strokeLayer" placeholder="描述名称或位置 (选填)">
+            <label>3. 哪些图层需要【勾边浮雕】？ (选填)</label>
+            <input type="text" id="strokeLayer" placeholder="描述名称或位置">
         </div>
 
         <div class="section">
-            <label>4. 您的接收邮箱</label>
+            <label>4. 您的接收邮箱 (选填)</label>
             <input type="email" id="userEmail" placeholder="建议填写，方便接收成品">
         </div>
 
@@ -83,7 +85,7 @@
         <div id="paymentArea">
             <p class="qr-tip">👇 点击下方图片放大后，长按识别支付</p>
             <a href="qr.jpg" target="_blank" class="qr-link">
-                <img src="qr.jpg" class="qr-img" alt="点击放大支付二维码">
+                <img src="qr.jpg" class="qr-img" alt="支付二维码">
             </a>
             
             <div style="margin-top:20px;">
@@ -101,15 +103,17 @@
 </div>
 
 <script>
+    // 【配置：指向你的 Render 后端地址】
+    const BACKEND_URL = 'https://royal-0hsp.onrender.com/api/submit-order';
+
     function updateTotal() {
         const count = document.getElementById('fileInput').files.length;
         document.getElementById('totalPrice').innerText = count * 5;
     }
 
     function showPayment() {
-        // 只检查有没有选文件
         if (document.getElementById('fileInput').files.length === 0) {
-            return alert("请先上传文件后再点击支付");
+            return alert("请先上传文件");
         }
         document.getElementById('submitStep1').style.display = 'none';
         document.getElementById('paymentArea').style.display = 'block';
@@ -119,17 +123,15 @@
         const btn = document.getElementById('finalBtn');
         const tradeNo = document.getElementById('tradeNo').value;
         
-        // 支付单号保留，方便你爸对账
         if (tradeNo.length < 4) return alert("请填写支付单号后4位");
 
         btn.disabled = true;
-        btn.innerText = "正在发送，请勿关闭页面...";
+        btn.innerText = "正在发送请求...";
 
         const formData = new FormData();
         const files = document.getElementById('fileInput').files;
         for (let i = 0; i < files.length; i++) { formData.append('files', files[i]); }
         
-        // 如果用户没填，后端收到的就是“未填写”
         formData.append('raiseLayer', document.getElementById('raiseLayer').value || "未填写");
         formData.append('strokeLayer', document.getElementById('strokeLayer').value || "未填写");
         formData.append('userEmail', document.getElementById('userEmail').value || "未填写");
@@ -137,10 +139,15 @@
         formData.append('totalPrice', document.getElementById('totalPrice').innerText);
 
         try {
-            const response = await fetch('/api/submit-order', { method: 'POST', body: formData });
+            // 使用 BACKEND_URL 进行跨域请求
+            const response = await fetch(BACKEND_URL, { 
+                method: 'POST', 
+                body: formData 
+            });
+            
             const result = await response.json();
             if (result.success) {
-                alert("订单提交成功！请等待 24 小时内查收邮件。");
+                alert("订单提交成功！请查收邮件。");
                 location.reload();
             } else {
                 alert("发送失败：" + (result.error || "接口异常"));
@@ -148,7 +155,7 @@
                 btn.innerText = "我已支付，提交订单";
             }
         } catch (error) {
-            alert("提交超时，但后端可能已在处理，请检查邮箱确认。");
+            alert("由于服务器位于海外，连接可能较慢。若 1 分钟后未报错，请检查邮箱。");
             btn.disabled = false;
             btn.innerText = "我已支付，提交订单";
         }
